@@ -21,10 +21,10 @@ All Raspberry Pi models with Raspberry Pi OS (32-bit or 64-bit):
 
 ### One-Line Install
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/sitech-indi/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/tajwk/SiTech-INDI/main/install.sh | bash
 ```
 
-### Manual Installation
+### Manual Installation (Recommended)
 
 1. **Update System**
    ```bash
@@ -37,11 +37,10 @@ curl -fsSL https://raw.githubusercontent.com/yourusername/sitech-indi/main/insta
    sudo apt-get install -y libindi-dev libnova-dev cmake build-essential git
    ```
 
-3. **Clone or Transfer Files**
+3. **Clone from GitHub**
    ```bash
-   # If using git:
-   git clone https://github.com/yourusername/sitech-indi-driver.git
-   cd sitech-indi-driver
+   git clone https://github.com/tajwk/SiTech-INDI.git
+   cd SiTech-INDI
    
    # OR transfer your files from Windows:
    # scp -r /path/to/driver pi@raspberrypi.local:~/sitech-indi-driver

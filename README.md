@@ -15,7 +15,7 @@ This is an INDI driver for SiTech telescope mounts, supporting both serial and T
 ## Supported Protocols
 
 ### TCP/IP Protocol
-- Connects to SiTechExe software (typically Windows, but can run on Linux via Wine)
+- Connects to SiTechExe software (typically Windows, but can run on Linux via Mono)
 - Default port: 8079 (configurable in SiTechExe)
 - Full command set including coordinate transformations
 - Real-time status updates
