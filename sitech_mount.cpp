@@ -193,15 +193,27 @@ bool SiTechMount::Handshake()
         return false;
     }
 
-    // Test TCP connection with ScopeInfo command
+    // Test TCP connection with basic status command
     std::string response;
-    if (!sendTCPCommand("ScopeInfo\n", response))
+    if (!sendTCPCommand("\n", response))
     {
         LOG_ERROR("Failed to communicate with SiTech mount via TCP");
         return false;
     }
 
     LOG_INFO("SiTech mount connected successfully via TCP");
+    
+    // Get scope information
+    if (sendTCPCommand("ScopeInfo\n", response))
+    {
+        parseScopeInfo(response);
+    }
+    
+    // Get site location
+    if (sendTCPCommand("SiteLocations\n", response))
+    {
+        parseSiteLocation(response);
+    }
     
     // Start periodic polling of mount status
     SetTimer(getCurrentPollingPeriod());
@@ -213,8 +225,8 @@ bool SiTechMount::ReadScopeStatus()
 {
     std::string response;
     
-    // Use ScopeInfo command to get mount status via TCP
-    if (!sendTCPCommand("ScopeInfo\n", response))
+    // Send empty command (just newline) to get standard return string with mount status
+    if (!sendTCPCommand("\n", response))
     {
         return false;
     }
@@ -226,7 +238,9 @@ bool SiTechMount::Goto(double RA, double Dec)
 {
     std::string command, response;
     
-    command = "GoTo " + std::to_string(RA) + " " + std::to_string(Dec) + "\n";
+    // INDI provides J2000 coordinates, so we add J2K flag to let SiTechExe
+    // handle precession, nutation, and aberration corrections
+    command = "GoTo " + std::to_string(RA) + " " + std::to_string(Dec) + " J2K\n";
     if (!sendTCPCommand(command, response))
     {
         return false;
@@ -240,7 +254,9 @@ bool SiTechMount::Sync(double RA, double Dec)
 {
     std::string command, response;
     
-    command = "Sync " + std::to_string(RA) + " " + std::to_string(Dec) + "\n";
+    // INDI provides J2000 coordinates, so we add J2K flag
+    // Use mode 2 (instant "load calibration" init) for quick sync
+    command = "Sync " + std::to_string(RA) + " " + std::to_string(Dec) + " 2 J2K\n";
     if (!sendTCPCommand(command, response))
     {
         return false;
@@ -351,7 +367,8 @@ IPState SiTechMount::GuideNorth(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 0 " + std::to_string(ms) + "\n";
+    // PulseGuide format: "PulseGuide Direction, Milliseconds\n" (note the comma)
+    cmd = "PulseGuide 0, " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -362,7 +379,7 @@ IPState SiTechMount::GuideSouth(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 1 " + std::to_string(ms) + "\n";
+    cmd = "PulseGuide 1, " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -373,7 +390,7 @@ IPState SiTechMount::GuideEast(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 2 " + std::to_string(ms) + "\n";
+    cmd = "PulseGuide 2, " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -384,7 +401,7 @@ IPState SiTechMount::GuideWest(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 3 " + std::to_string(ms) + "\n";
+    cmd = "PulseGuide 3, " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -512,8 +529,10 @@ bool SiTechMount::parseStatusResponse(const std::string &response)
 
 bool SiTechMount::parseTCPResponse(const std::string &response)
 {
-    // Parse TCP response format:
+    // Parse TCP response format (standard return string):
     // boolParms;RA;Dec;Alt;Az;SecondaryAngle;PrimaryAngle;SiderealTime;JulianDay;ScopeTime;AirMass;_message
+    
+    LOGF_DEBUG("TCP Response: %s", response.c_str());
     
     std::vector<std::string> tokens;
     std::stringstream ss(response);
@@ -529,28 +548,32 @@ bool SiTechMount::parseTCPResponse(const std::string &response)
         try
         {
             int boolParms = std::stoi(tokens[0]);
-            current_ra = std::stod(tokens[1]);
-            current_dec = std::stod(tokens[2]);
-            current_alt = std::stod(tokens[3]);
-            current_az = std::stod(tokens[4]);
-            scope_sidereal_time = std::stod(tokens[7]);
-            scope_julian_day = std::stod(tokens[8]);
-            scope_time = std::stod(tokens[9]);
-            air_mass = std::stod(tokens[10]);
+            current_ra = std::stod(tokens[1]);  // Hours, JNow
+            current_dec = std::stod(tokens[2]); // Degrees, JNow
+            current_alt = std::stod(tokens[3]); // Degrees
+            current_az = std::stod(tokens[4]);  // Degrees
+            // tokens[5] is Secondary Axis Angle (degrees)
+            // tokens[6] is Primary Axis Angle (degrees)
+            scope_sidereal_time = std::stod(tokens[7]); // Hours
+            scope_julian_day = std::stod(tokens[8]);    // Julian Day
+            scope_time = std::stod(tokens[9]);          // Hours
+            air_mass = std::stod(tokens[10]);           // AirMass
+            // tokens[11] starts with "_" and contains message
             
-            // Parse boolean parameters
-            scope_initialized = (boolParms & 1) != 0;
-            scope_tracking = (boolParms & 2) != 0;
-            scope_slewing = (boolParms & 4) != 0;
-            scope_parking = (boolParms & 8) != 0;
-            scope_parked = (boolParms & 16) != 0;
-            scope_looking_east = (boolParms & 32) != 0;
-            controller_blinky = (boolParms & 64) != 0;
-            communication_fault = (boolParms & 128) != 0;
+            // Parse boolean parameters (bit flags)
+            scope_initialized = (boolParms & 1) != 0;      // Bit 0: Scope Is Initialized
+            scope_tracking = (boolParms & 2) != 0;         // Bit 1: Scope Is Tracking
+            scope_slewing = (boolParms & 4) != 0;          // Bit 2: Scope is Slewing
+            scope_parking = (boolParms & 8) != 0;          // Bit 3: Scope is Parking
+            scope_parked = (boolParms & 16) != 0;          // Bit 4: Scope is Parked
+            scope_looking_east = (boolParms & 32) != 0;    // Bit 5: Looking East (GEM)
+            controller_blinky = (boolParms & 64) != 0;     // Bit 6: Blinky (Manual) mode
+            communication_fault = (boolParms & 128) != 0;  // Bit 7: Comm fault with controller
             
             // Update INDI properties
             NewRaDec(current_ra, current_dec);
             
+            // Update tracking state
             if (scope_parked)
                 TrackState = SCOPE_PARKED;
             else if (scope_slewing)
@@ -560,6 +583,12 @@ bool SiTechMount::parseTCPResponse(const std::string &response)
             else
                 TrackState = SCOPE_IDLE;
             
+            // Log any error conditions
+            if (controller_blinky)
+                LOG_WARN("Servo controller is in Blinky (Manual) mode");
+            if (communication_fault)
+                LOG_ERROR("Communication fault between SiTechExe and ServoController");
+            
             return true;
         }
         catch (const std::exception &e)
@@ -567,6 +596,114 @@ bool SiTechMount::parseTCPResponse(const std::string &response)
             LOGF_ERROR("Error parsing TCP response: %s", e.what());
             return false;
         }
+    }
+    else
+    {
+        LOGF_ERROR("Invalid TCP response - expected at least 11 fields, got %d", tokens.size());
+    }
+    
+    return false;
+}
+
+bool SiTechMount::parseScopeInfo(const std::string &response)
+{
+    // Parse ScopeInfo response format:
+    // ApertureDiameter;ApertureArea;FocalLength;NameOfScope;_ScopeInfo
+    
+    LOGF_DEBUG("ScopeInfo Response: %s", response.c_str());
+    
+    std::vector<std::string> tokens;
+    std::stringstream ss(response);
+    std::string token;
+    
+    while (std::getline(ss, token, ';'))
+    {
+        tokens.push_back(token);
+    }
+    
+    if (tokens.size() >= 4)
+    {
+        try
+        {
+            IUSaveText(&ScopeInfoT[0], tokens[0].c_str()); // Aperture Diameter
+            IUSaveText(&ScopeInfoT[1], tokens[1].c_str()); // Aperture Area
+            IUSaveText(&ScopeInfoT[2], tokens[2].c_str()); // Focal Length
+            IUSaveText(&ScopeInfoT[3], tokens[3].c_str()); // Scope Name
+            
+            ScopeInfoTP.s = IPS_OK;
+            IDSetText(&ScopeInfoTP, nullptr);
+            
+            LOGF_INFO("Scope: %s, Aperture: %s mm, Focal Length: %s mm", 
+                     tokens[3].c_str(), tokens[0].c_str(), tokens[2].c_str());
+            
+            return true;
+        }
+        catch (const std::exception &e)
+        {
+            LOGF_ERROR("Error parsing ScopeInfo response: %s", e.what());
+            return false;
+        }
+    }
+    else
+    {
+        LOGF_ERROR("Invalid ScopeInfo response - expected at least 4 fields, got %d", tokens.size());
+    }
+    
+    return false;
+}
+
+bool SiTechMount::parseSiteLocation(const std::string &response)
+{
+    // Parse SiteLocations response format:
+    // siteLatitude (deg's);siteLongitude (deg's);siteElevation (meters);_SiteLocations
+    
+    LOGF_DEBUG("SiteLocations Response: %s", response.c_str());
+    
+    std::vector<std::string> tokens;
+    std::stringstream ss(response);
+    std::string token;
+    
+    while (std::getline(ss, token, ';'))
+    {
+        tokens.push_back(token);
+    }
+    
+    if (tokens.size() >= 3)
+    {
+        try
+        {
+            double latitude = std::stod(tokens[0]);
+            double longitude = std::stod(tokens[1]);
+            double elevation = std::stod(tokens[2]);
+            
+            SiteLocationN[0].value = latitude;
+            SiteLocationN[1].value = longitude;
+            SiteLocationN[2].value = elevation;
+            
+            SiteLocationNP.s = IPS_OK;
+            IDSetNumber(&SiteLocationNP, nullptr);
+            
+            // Also update the telescope location
+            LocationN[LOCATION_LATITUDE].value = latitude;
+            LocationN[LOCATION_LONGITUDE].value = longitude;
+            LocationN[LOCATION_ELEVATION].value = elevation;
+            LocationNP.s = IPS_OK;
+            IDSetNumber(&LocationNP, nullptr);
+            
+            LOGF_INFO("Site Location: Lat %.6f°, Lon %.6f°, Elev %.1f m", 
+                     latitude, longitude, elevation);
+            
+            return true;
+        }
+        catch (const std::exception &e)
+        {
+            LOGF_ERROR("Error parsing SiteLocations response: %s", e.what());
+            return false;
+        }
+    }
+    else
+    {
+        LOGF_ERROR("Invalid SiteLocations response - expected at least 3 fields, got %d", tokens.size());
     }
     
     return false;

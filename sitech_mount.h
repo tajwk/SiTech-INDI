@@ -51,6 +51,8 @@ private:
     // Protocol parsing
     bool parseStatusResponse(const std::string &response);
     bool parseTCPResponse(const std::string &response);
+    bool parseScopeInfo(const std::string &response);
+    bool parseSiteLocation(const std::string &response);
     
     // Utility methods
     std::string calculateChecksum(const std::string &command);
