@@ -193,9 +193,9 @@ bool SiTechMount::Handshake()
         return false;
     }
 
-    // Test TCP connection with basic status command
+    // Test TCP connection with ReadScopeStatus command
     std::string response;
-    if (!sendTCPCommand("\n", response))
+    if (!sendTCPCommand("ReadScopeStatus\n", response))
     {
         LOG_ERROR("Failed to communicate with SiTech mount via TCP");
         return false;
@@ -225,8 +225,8 @@ bool SiTechMount::ReadScopeStatus()
 {
     std::string response;
     
-    // Send empty command (just newline) to get standard return string with mount status
-    if (!sendTCPCommand("\n", response))
+    // Send ReadScopeStatus command to get standard return string with mount status
+    if (!sendTCPCommand("ReadScopeStatus\n", response))
     {
         return false;
     }
