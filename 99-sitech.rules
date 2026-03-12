@@ -1,0 +1,9 @@
+# SiTech mount udev rules
+# This allows non-root access to SiTech mount serial devices
+
+# SiTech controllers - add your specific vendor/product IDs here
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666", GROUP="dialout"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", MODE="0666", GROUP="dialout"
+
+# Generic FTDI devices that might be used with SiTech
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", MODE="0666", GROUP="dialout"

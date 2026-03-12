@@ -1,0 +1,65 @@
+# Build directories
+build/
+bin/
+obj/
+out/
+
+# IDE and editor files
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+.idea/
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Package files (generated)
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Log files
+*.log
+log/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Test executables and test source files
+protocol_test
+protocol_test.cpp
+test_*
+
+# Development/meta files (not needed by users)
+PUBLISHING.md
+build.bat
+Makefile.win
+test_mono_setup.sh
+TESTING_MONO.md
+installation_guide.html
