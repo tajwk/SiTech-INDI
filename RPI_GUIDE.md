@@ -19,12 +19,15 @@ All Raspberry Pi models with Raspberry Pi OS (32-bit or 64-bit):
 
 ## Quick Installation
 
-### One-Line Install
+### Recommended Method
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tajwk/SiTech-INDI/main/install.sh | bash
+git clone https://github.com/tajwk/SiTech-INDI.git
+cd SiTech-INDI
+chmod +x install.sh
+./install.sh
 ```
 
-### Manual Installation (Recommended)
+### Step-by-Step Installation
 
 1. **Update System**
    ```bash
