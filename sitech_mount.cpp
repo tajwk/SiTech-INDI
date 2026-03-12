@@ -202,6 +202,10 @@ bool SiTechMount::Handshake()
     }
 
     LOG_INFO("SiTech mount connected successfully via TCP");
+    
+    // Start periodic polling of mount status
+    SetTimer(getCurrentPollingPeriod());
+    
     return true;
 }
 
