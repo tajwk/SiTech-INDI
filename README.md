@@ -1,7 +1,5 @@
 # SiTech INDI Driver
 
-This is an INDI driver for SiTech telescope mounts, supporting both serial and TCP/IP communication protocols.
-
 ## Installation
 
 ### Prerequisites
