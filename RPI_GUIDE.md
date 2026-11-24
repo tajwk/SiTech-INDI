@@ -37,8 +37,9 @@ chmod +x install.sh
 
 2. **Install Dependencies**
    ```bash
-   sudo apt-get install -y libindi-dev libnova-dev cmake build-essential git
+   sudo apt-get install -y libindi-dev indi-bin libnova-dev cmake build-essential pkg-config git
    ```
+   `libindi-dev` is needed to compile the driver. `indi-bin` provides `indiserver`, which is needed to run it.
 
 3. **Clone from GitHub**
    ```bash
@@ -57,8 +58,9 @@ chmod +x install.sh
 
 5. **Verify Installation**
    ```bash
-   which indi_sitech_mount
+   which indi_sitech_mount       # should print /usr/bin/indi_sitech_mount
    ls /usr/share/indi/indi_sitech.xml
+   which indiserver              # if missing: sudo apt-get install indi-bin
    ```
 
 ## Network Configuration
@@ -87,6 +89,16 @@ chmod +x install.sh
     │  Mount    │
     └───────────┘
 ```
+
+### Ports Used
+
+| Port | What listens on it | Who connects to it |
+|------|--------------------|--------------------|
+| 7624 | `indiserver` on the Pi (standard INDI port) | KStars/Ekos and other INDI clients |
+| 8079 | SiTechExe ("Indi Port Number" in its config) | The SiTech INDI driver |
+| 8624 | INDI Web Manager (if installed) | Your web browser |
+
+SiTechExe's "Indi Port Number" (8079) is **not** the INDI server port. In the Ekos Profile Editor, use **7624**. Enter 8079 only in the driver's Connection tab.
 
 ### Static IP Configuration (Recommended)
 
@@ -200,7 +212,8 @@ Create a systemd service:
 
 **Raspberry Pi Configuration:**
 1. Start INDI driver (any method above)
-2. From KStars/Ekos or INDI client:
+2. Connect KStars/Ekos to the Pi's `indiserver` on port 7624 (see [Client Connection](#client-connection))
+3. In the INDI Control Panel → SiTech Mount → Connection tab:
    - Connection Type: TCP/IP
    - Host: `192.168.1.100` (Windows PC IP)
    - Port: `8079`

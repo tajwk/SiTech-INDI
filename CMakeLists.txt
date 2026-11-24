@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 project(indi_sitech)
 
+# Install to /usr by default (CMake's own default is /usr/local) so that
+# indi_sitech.xml lands in /usr/share/indi, where KStars/Ekos and INDI Web
+# Manager look for driver lists. Override with -DCMAKE_INSTALL_PREFIX=<path>.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install path prefix" FORCE)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules/")
 

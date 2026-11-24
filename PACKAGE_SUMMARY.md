@@ -95,7 +95,7 @@ This is a complete INDI driver package for SiTech telescope mounts. The driver s
 
 2. **Install Dependencies**
    ```bash
-   sudo apt-get install libindi-dev libnova-dev cmake
+   sudo apt-get install libindi-dev indi-bin libnova-dev cmake build-essential pkg-config
    ```
 
 3. **Build and Install**

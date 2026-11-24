@@ -29,8 +29,9 @@ This is a complete INDI driver package for SiTech telescope mounts. Since you're
 2. Install dependencies:
    ```bash
    sudo apt-get update
-   sudo apt-get install libindi-dev libnova-dev cmake build-essential
+   sudo apt-get install libindi-dev indi-bin libnova-dev cmake build-essential pkg-config
    ```
+   `libindi-dev` is needed to compile the driver. `indi-bin` provides `indiserver`, which is needed to run it.
 3. Build and install:
    ```bash
    chmod +x build.sh
@@ -38,6 +39,18 @@ This is a complete INDI driver package for SiTech telescope mounts. Since you're
    cd build
    sudo make install
    ```
+   This installs `/usr/bin/indi_sitech_mount` and `/usr/share/indi/indi_sitech.xml`. To install somewhere else, run `PREFIX=/some/path ./build.sh`.
+
+Alternatively, `./install.sh` does steps 2 and 3 in one go.
+
+### Check the Installation
+```bash
+which indi_sitech_mount              # should print /usr/bin/indi_sitech_mount
+ls /usr/share/indi/indi_sitech.xml
+which indiserver                     # if missing: sudo apt-get install indi-bin
+```
+
+If an older install put files in `/usr/local/bin` or `/usr/local/share/indi`, delete them so they can't run in place of the new driver.
 
 ### Method 2: Transfer and Build
 1. Package the files on Windows:
@@ -74,13 +87,24 @@ This is a complete INDI driver package for SiTech telescope mounts. Since you're
 
 ## Configuration
 
+### Ports: Two Separate Connections
+```
+KStars/Ekos ──(port 7624)──► indiserver + indi_sitech_mount ──(port 8079)──► SiTechExe
+```
+- **7624**: the INDI server port. Ekos connects to `indiserver` here. Set it in the Ekos Profile Editor.
+- **8079**: SiTechExe's "Indi Port Number". The driver connects to SiTechExe here. Set it in the driver's Connection tab.
+
+Despite its name, SiTechExe's "Indi Port Number" is **not** the INDI server port. Don't enter 8079 as the INDI server port in Ekos.
+
 ### TCP Connection (Recommended)
 1. Run SiTechExe on computer (Windows typically, or Linux via Wine)
-2. Configure TCP port in SiTechExe (default: 8079)
-3. In INDI client:
-   - Select "SiTech Mount" driver
+2. Configure the TCP port in SiTechExe: Config → Change Config → Misc → "Indi Port Number" (default: 8079)
+3. Start the INDI server with the driver (`indiserver -v indi_sitech_mount`, or from Ekos)
+4. Connect your INDI client to `indiserver` on port **7624**
+5. In the INDI Control Panel → SiTech Mount → Connection tab:
    - Choose "TCP/IP" connection
-   - Set host IP and port (use "localhost" or "127.0.0.1" if same machine)
+   - Host: IP of the computer running SiTechExe ("localhost" or "127.0.0.1" if same machine)
+   - Port: SiTechExe's "Indi Port Number" (default **8079**)
    - Connect
 
 **Note**: SiTechExe can run on the same Linux computer as the INDI driver, or on a separate computer accessible via network.
