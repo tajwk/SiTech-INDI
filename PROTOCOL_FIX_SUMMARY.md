@@ -23,9 +23,8 @@ Fixed the INDI driver to use the actual SiTech TCP protocol as specified in SiTe
 - Updates INDI location properties automatically
 
 ### 3. PulseGuide Commands - Line ~365-402
-**Before:** `"PulseGuide 0 1000\n"` (missing comma separator)
-**After:** `"PulseGuide 0, 1000\n"` (correct format with comma)
-**Reason:** Protocol specifies: `"PulseGuide Direction, Milliseconds\n"` - note the comma
+**Correct format:** `"PulseGuide 0 1000\n"` (space only, **no comma**)
+**History:** This was once changed to `"PulseGuide 0, 1000\n"` because the format line in the protocol doc shows a comma. Testing against live SiTechExe showed the comma form is declined ("Bad Parameters, Out of Range"), so the comma was removed again. The doc's own example (`"PulseGuide 0 1000\n"`) is the correct one.
 
 ### 4. parseTCPResponse() - Line ~509-606
 **Enhanced:**

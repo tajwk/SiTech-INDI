@@ -190,7 +190,7 @@ indi_setprop "SiTech Mount.TELESCOPE_TIMED_GUIDE_NS.TIMED_GUIDE_N=1000"
 
 # Watch logs for PulseGuide command
 # Expected log entry:
-# "PulseGuide 0, 1000\n"  (note the comma!)
+# "PulseGuide 0 1000\n"  (no comma -- SiTechExe declines "PulseGuide 0, 1000")
 
 # Test all four directions
 indi_setprop "SiTech Mount.TELESCOPE_TIMED_GUIDE_NS.TIMED_GUIDE_S=500"

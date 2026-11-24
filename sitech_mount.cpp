@@ -323,6 +323,10 @@ bool SiTechMount::SetDefaultPark()
     return true;
 }
 
+// Axis mapping: the primary axis is RA (equatorial) or azimuth (alt-az);
+// the secondary axis is Dec (equatorial) or altitude (alt-az).
+// So North/South (up/down) drives the secondary axis and West/East (left/right)
+// drives the primary axis.
 bool SiTechMount::MoveNS(INDI_DIR_NS dir, TelescopeMotionCommand command)
 {
     std::string cmd, response;
@@ -331,13 +335,13 @@ bool SiTechMount::MoveNS(INDI_DIR_NS dir, TelescopeMotionCommand command)
     {
         double rate = SlewRateN[0].value;
         if (dir == DIRECTION_NORTH)
-            cmd = "MoveAxisPri " + std::to_string(rate) + "\n";
+            cmd = "MoveAxisSec " + std::to_string(rate) + "\n";
         else
-            cmd = "MoveAxisPri " + std::to_string(-rate) + "\n";
+            cmd = "MoveAxisSec " + std::to_string(-rate) + "\n";
     }
     else
     {
-        cmd = "MoveAxisPri 0\n";
+        cmd = "MoveAxisSec 0\n";
     }
     
     return sendTCPCommand(cmd, response);
@@ -351,13 +355,13 @@ bool SiTechMount::MoveWE(INDI_DIR_WE dir, TelescopeMotionCommand command)
     {
         double rate = SlewRateN[0].value;
         if (dir == DIRECTION_WEST)
-            cmd = "MoveAxisSec " + std::to_string(rate) + "\n";
+            cmd = "MoveAxisPri " + std::to_string(rate) + "\n";
         else
-            cmd = "MoveAxisSec " + std::to_string(-rate) + "\n";
+            cmd = "MoveAxisPri " + std::to_string(-rate) + "\n";
     }
     else
     {
-        cmd = "MoveAxisSec 0\n";
+        cmd = "MoveAxisPri 0\n";
     }
     
     return sendTCPCommand(cmd, response);
@@ -367,8 +371,10 @@ IPState SiTechMount::GuideNorth(uint32_t ms)
 {
     std::string cmd, response;
     
-    // PulseGuide format: "PulseGuide Direction, Milliseconds\n" (note the comma)
-    cmd = "PulseGuide 0, " + std::to_string(ms) + "\n";
+    // PulseGuide format: "PulseGuide Direction Milliseconds\n" -- NO comma.
+    // SiTechExe declines the comma form ("Bad Parameters, Out of Range"), even though
+    // the format line in SiTechTCPProtocol.txt shows one (its own example has none).
+    cmd = "PulseGuide 0 " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -379,7 +385,7 @@ IPState SiTechMount::GuideSouth(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 1, " + std::to_string(ms) + "\n";
+    cmd = "PulseGuide 1 " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -390,7 +396,7 @@ IPState SiTechMount::GuideEast(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 2, " + std::to_string(ms) + "\n";
+    cmd = "PulseGuide 2 " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     
@@ -401,7 +407,7 @@ IPState SiTechMount::GuideWest(uint32_t ms)
 {
     std::string cmd, response;
     
-    cmd = "PulseGuide 3, " + std::to_string(ms) + "\n";
+    cmd = "PulseGuide 3 " + std::to_string(ms) + "\n";
     if (sendTCPCommand(cmd, response))
         return IPS_OK;
     

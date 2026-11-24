@@ -191,17 +191,17 @@ MoveAxisSec 1.5\n
 ## Guiding Commands
 
 ### PulseGuide - Guide pulse
-**Command:** `"PulseGuide Direction, Milliseconds\n"`
+**Command:** `"PulseGuide Direction Milliseconds\n"` (**no comma**; SiTechExe declines the comma form shown in the protocol doc's format line)
 **Parameters:**
 - Direction: 0=North, 1=South, 2=East, 3=West
 - Milliseconds: Duration of guide pulse
 
 **Examples:**
 ```
-PulseGuide 0, 1000\n   # Guide north for 1 second
-PulseGuide 1, 500\n    # Guide south for 0.5 seconds
-PulseGuide 2, 1000\n   # Guide east for 1 second
-PulseGuide 3, 750\n    # Guide west for 0.75 seconds
+PulseGuide 0 1000\n   # Guide north for 1 second
+PulseGuide 1 500\n    # Guide south for 0.5 seconds
+PulseGuide 2 1000\n   # Guide east for 1 second
+PulseGuide 3 750\n    # Guide west for 0.75 seconds
 ```
 
 **Response:** Standard return string
