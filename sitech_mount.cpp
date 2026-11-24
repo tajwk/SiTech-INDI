@@ -334,10 +334,12 @@ bool SiTechMount::MoveNS(INDI_DIR_NS dir, TelescopeMotionCommand command)
     if (command == MOTION_START)
     {
         double rate = SlewRateN[0].value;
+        // North (up) is a negative secondary-axis speed (confirmed on an alt-az mount;
+        // not yet checked on an equatorial mount).
         if (dir == DIRECTION_NORTH)
-            cmd = "MoveAxisSec " + std::to_string(rate) + "\n";
-        else
             cmd = "MoveAxisSec " + std::to_string(-rate) + "\n";
+        else
+            cmd = "MoveAxisSec " + std::to_string(rate) + "\n";
     }
     else
     {
